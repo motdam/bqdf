@@ -51,7 +51,7 @@ import json
 ```
 
 ``` python
-gn_query = """
+top_terms_query = """
 -- todays top 10 search terms in England
 SELECT refresh_date, rank, term, score, percent_gain / 100 as percent_gain, country_name, week
 FROM `bigquery-public-data.google_trends.international_top_rising_terms` 
@@ -59,33 +59,33 @@ WHERE country_name = 'United Kingdom'
   and refresh_date = current_date - 1
   and region_name = 'England'
 order by refresh_date desc, week desc, rank
-limit 10
+limit 5
 """
 ```
 
 ### Reading a bq table
 
 ``` python
-df = read(gn_query, credentials=credentials, project_id='bq-sandbox-motdam')
-df
+df = read(top_terms_query, credentials=credentials, project_id='bq-sandbox-motdam')
+df.head()
 ```
 
     Downloading:   0%|          |Downloading: 100%|██████████|
-    Loaded 10 rows × 7 cols (0.0000 GB) from query in 0.60s
+    Loaded 5 rows × 7 cols (0.0000 GB) from query in 0.90s
     <class 'pandas.core.frame.DataFrame'>
-    RangeIndex: 10 entries, 0 to 9
+    RangeIndex: 5 entries, 0 to 4
     Data columns (total 7 columns):
      #   Column        Non-Null Count  Dtype         
     ---  ------        --------------  -----         
-     0   refresh_date  10 non-null     datetime64[ns]
-     1   rank          10 non-null     Int64         
-     2   term          10 non-null     object        
-     3   score         10 non-null     Int64         
-     4   percent_gain  10 non-null     Float64       
-     5   country_name  10 non-null     object        
-     6   week          10 non-null     dbdate        
+     0   refresh_date  5 non-null      datetime64[ns]
+     1   rank          5 non-null      Int64         
+     2   term          5 non-null      object        
+     3   score         5 non-null      Int64         
+     4   percent_gain  5 non-null      Float64       
+     5   country_name  5 non-null      object        
+     6   week          5 non-null      dbdate        
     dtypes: Float64(1), Int64(2), datetime64[ns](1), dbdate(1), object(2)
-    memory usage: 722.0+ bytes
+    memory usage: 427.0+ bytes
     None
 
 <div>
@@ -108,47 +108,42 @@ df
 | 2 | 2025-11-22 | 3 | stone roses | 100 | 43.5 | United Kingdom | 2025-11-16 |
 | 3 | 2025-11-22 | 4 | lavalier | 100 | 41.5 | United Kingdom | 2025-11-16 |
 | 4 | 2025-11-22 | 5 | boutonniere | 100 | 32.5 | United Kingdom | 2025-11-16 |
-| 5 | 2025-11-22 | 6 | eng vs aus | 100 | 30.5 | United Kingdom | 2025-11-16 |
-| 6 | 2025-11-22 | 7 | wolf eel | 100 | 25.0 | United Kingdom | 2025-11-16 |
-| 7 | 2025-11-22 | 8 | england vs australia | 31 | 20.5 | United Kingdom | 2025-11-16 |
-| 8 | 2025-11-22 | 9 | lavalier meaning | 100 | 15.5 | United Kingdom | 2025-11-16 |
-| 9 | 2025-11-22 | 10 | scarf ring | 100 | 10.5 | United Kingdom | 2025-11-16 |
 
 </div>
 
 To recreate the above with the original library you would need the below
-boiler plate to inspect the results and convert the type fields
-properly.
+boiler plate to inspect the results and convert columns into pandas
+friendly dtypes.
 
 ``` python
 import pandas_gbq
 import pandas as pd
 
-df = pandas_gbq.read_gbq(gn_query, project_id='bq-sandbox-motdam', credentials=credentials)
+df = pandas_gbq.read_gbq(top_terms_query, project_id='bq-sandbox-motdam', credentials=credentials)
 df = df.astype({
     'percent_gain':'Float64'
 })
-for d in ['week', 'refresh_date']:
-    df[d] = pd.to_datetime(df[d])
+df['week'] = pd.to_datetime(df[d])
+df['refresh_date'] = pd.to_datetime(df[d])
 print(df.info())
-df
+df.head()
 ```
 
     Downloading:   0%|          |Downloading: 100%|██████████|
     <class 'pandas.core.frame.DataFrame'>
-    RangeIndex: 10 entries, 0 to 9
+    RangeIndex: 5 entries, 0 to 4
     Data columns (total 7 columns):
      #   Column        Non-Null Count  Dtype         
     ---  ------        --------------  -----         
-     0   refresh_date  10 non-null     datetime64[ns]
-     1   rank          10 non-null     Int64         
-     2   term          10 non-null     object        
-     3   score         10 non-null     Int64         
-     4   percent_gain  10 non-null     Float64       
-     5   country_name  10 non-null     object        
-     6   week          10 non-null     datetime64[ns]
+     0   refresh_date  5 non-null      datetime64[ns]
+     1   rank          5 non-null      Int64         
+     2   term          5 non-null      object        
+     3   score         5 non-null      Int64         
+     4   percent_gain  5 non-null      Float64       
+     5   country_name  5 non-null      object        
+     6   week          5 non-null      datetime64[ns]
     dtypes: Float64(1), Int64(2), datetime64[ns](2), object(2)
-    memory usage: 722.0+ bytes
+    memory usage: 427.0+ bytes
     None
 
 <div>
@@ -166,16 +161,11 @@ df
 
 |  | refresh_date | rank | term | score | percent_gain | country_name | week |
 |----|----|----|----|----|----|----|----|
-| 0 | 2025-11-22 | 1 | mani | 100 | 65.0 | United Kingdom | 2025-11-16 |
-| 1 | 2025-11-22 | 2 | mani stone roses | 100 | 43.5 | United Kingdom | 2025-11-16 |
-| 2 | 2025-11-22 | 3 | stone roses | 100 | 43.5 | United Kingdom | 2025-11-16 |
-| 3 | 2025-11-22 | 4 | lavalier | 100 | 41.5 | United Kingdom | 2025-11-16 |
-| 4 | 2025-11-22 | 5 | boutonniere | 100 | 32.5 | United Kingdom | 2025-11-16 |
-| 5 | 2025-11-22 | 6 | eng vs aus | 100 | 30.5 | United Kingdom | 2025-11-16 |
-| 6 | 2025-11-22 | 7 | wolf eel | 100 | 25.0 | United Kingdom | 2025-11-16 |
-| 7 | 2025-11-22 | 8 | england vs australia | 31 | 20.5 | United Kingdom | 2025-11-16 |
-| 8 | 2025-11-22 | 9 | lavalier meaning | 100 | 15.5 | United Kingdom | 2025-11-16 |
-| 9 | 2025-11-22 | 10 | scarf ring | 100 | 10.5 | United Kingdom | 2025-11-16 |
+| 0 | 2025-11-22 | 1 | mani | 100 | 65.0 | United Kingdom | 2025-11-22 |
+| 1 | 2025-11-22 | 2 | mani stone roses | 100 | 43.5 | United Kingdom | 2025-11-22 |
+| 2 | 2025-11-22 | 3 | stone roses | 100 | 43.5 | United Kingdom | 2025-11-22 |
+| 3 | 2025-11-22 | 4 | lavalier | 100 | 41.5 | United Kingdom | 2025-11-22 |
+| 4 | 2025-11-22 | 5 | boutonniere | 100 | 32.5 | United Kingdom | 2025-11-22 |
 
 </div>
 
