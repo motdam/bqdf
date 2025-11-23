@@ -7,5 +7,6 @@ d = { 'settings': { 'branch': 'main',
                 'lib_path': 'bqdf'},
   'syms': { 'bqdf.core': { 'bqdf.core.convert_bq_dtypes': ('core.html#convert_bq_dtypes', 'bqdf/core.py'),
                            'bqdf.core.ex': ('core.html#ex', 'bqdf/core.py'),
+                           'bqdf.core.get_size_gb': ('core.html#get_size_gb', 'bqdf/core.py'),
                            'bqdf.core.read': ('core.html#read', 'bqdf/core.py'),
                            'bqdf.core.to': ('core.html#to', 'bqdf/core.py')}}}
