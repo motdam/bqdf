@@ -5,4 +5,7 @@ d = { 'settings': { 'branch': 'main',
                 'doc_host': 'https://motdam.github.io',
                 'git_url': 'https://github.com/motdam/bqdf',
                 'lib_path': 'bqdf'},
-  'syms': {'bqdf.core': {'bqdf.core.foo': ('core.html#foo', 'bqdf/core.py')}}}
+  'syms': { 'bqdf.core': { 'bqdf.core.convert_bq_dtypes': ('core.html#convert_bq_dtypes', 'bqdf/core.py'),
+                           'bqdf.core.ex': ('core.html#ex', 'bqdf/core.py'),
+                           'bqdf.core.read': ('core.html#read', 'bqdf/core.py'),
+                           'bqdf.core.to': ('core.html#to', 'bqdf/core.py')}}}
