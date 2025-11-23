@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "bqdf"
+  site-url: "https://motdam.github.io/bqdf"
+  description: "Ergonomic wrapper for pandas_gbq that simplifies loading BigQuery data into DataFrames"
+  repo-branch: main
+  repo-url: "https://github.com/motdam/bqdf"
