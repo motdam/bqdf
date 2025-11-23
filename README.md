@@ -6,24 +6,6 @@
 This file will become your README and also the index of your
 documentation.
 
-## Developer Guide
-
-If you are new to using `nbdev` here are some useful pointers to get you
-started.
-
-### Install bqdf in Development mode
-
-``` sh
-# make sure bqdf package is installed in development mode
-$ pip install -e .
-
-# make changes under nbs/ directory
-# ...
-
-# compile to have changes apply to bqdf
-$ nbdev_prepare
-```
-
 ## Usage
 
 ### Installation
@@ -58,10 +40,263 @@ package manager specific guidelines on
 
 ## How to use
 
-Fill me in please! Don’t forget code examples:
+This lib provides convenience functions for streamlining the interface
+of the pandas-gbq library to perform CRUD operations in BigQuery more
+quickly
 
 ``` python
-1+1
+from google.oauth2 import service_account
+import os
+import json
 ```
 
-    2
+``` python
+gn_query = """
+-- todays top 10 search terms in England
+SELECT refresh_date, rank, term, score, percent_gain / 100 as percent_gain, country_name, week
+FROM `bigquery-public-data.google_trends.international_top_rising_terms` 
+WHERE country_name = 'United Kingdom'
+  and refresh_date = current_date - 1
+  and region_name = 'England'
+order by refresh_date desc, week desc, rank
+limit 10
+"""
+```
+
+### Reading a bq table
+
+``` python
+df = read(gn_query, credentials=credentials, project_id='bq-sandbox-motdam')
+df
+```
+
+    Downloading:   0%|          |Downloading: 100%|██████████|
+    Loaded 10 rows × 7 cols (0.0000 GB) from query in 0.60s
+    <class 'pandas.core.frame.DataFrame'>
+    RangeIndex: 10 entries, 0 to 9
+    Data columns (total 7 columns):
+     #   Column        Non-Null Count  Dtype         
+    ---  ------        --------------  -----         
+     0   refresh_date  10 non-null     datetime64[ns]
+     1   rank          10 non-null     Int64         
+     2   term          10 non-null     object        
+     3   score         10 non-null     Int64         
+     4   percent_gain  10 non-null     Float64       
+     5   country_name  10 non-null     object        
+     6   week          10 non-null     dbdate        
+    dtypes: Float64(1), Int64(2), datetime64[ns](1), dbdate(1), object(2)
+    memory usage: 722.0+ bytes
+    None
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&#10;    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+&#10;    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+
+|  | refresh_date | rank | term | score | percent_gain | country_name | week |
+|----|----|----|----|----|----|----|----|
+| 0 | 2025-11-22 | 1 | mani | 100 | 65.0 | United Kingdom | 2025-11-16 |
+| 1 | 2025-11-22 | 2 | mani stone roses | 100 | 43.5 | United Kingdom | 2025-11-16 |
+| 2 | 2025-11-22 | 3 | stone roses | 100 | 43.5 | United Kingdom | 2025-11-16 |
+| 3 | 2025-11-22 | 4 | lavalier | 100 | 41.5 | United Kingdom | 2025-11-16 |
+| 4 | 2025-11-22 | 5 | boutonniere | 100 | 32.5 | United Kingdom | 2025-11-16 |
+| 5 | 2025-11-22 | 6 | eng vs aus | 100 | 30.5 | United Kingdom | 2025-11-16 |
+| 6 | 2025-11-22 | 7 | wolf eel | 100 | 25.0 | United Kingdom | 2025-11-16 |
+| 7 | 2025-11-22 | 8 | england vs australia | 31 | 20.5 | United Kingdom | 2025-11-16 |
+| 8 | 2025-11-22 | 9 | lavalier meaning | 100 | 15.5 | United Kingdom | 2025-11-16 |
+| 9 | 2025-11-22 | 10 | scarf ring | 100 | 10.5 | United Kingdom | 2025-11-16 |
+
+</div>
+
+To recreate the above with the original library you would need the below
+boiler plate to inspect the results and convert the type fields
+properly.
+
+``` python
+import pandas_gbq
+import pandas as pd
+
+df = pandas_gbq.read_gbq(gn_query, project_id='bq-sandbox-motdam', credentials=credentials)
+df = df.astype({
+    'percent_gain':'Float64'
+})
+for d in ['week', 'refresh_date']:
+    df[d] = pd.to_datetime(df[d])
+print(df.info())
+df
+```
+
+    Downloading:   0%|          |Downloading: 100%|██████████|
+    <class 'pandas.core.frame.DataFrame'>
+    RangeIndex: 10 entries, 0 to 9
+    Data columns (total 7 columns):
+     #   Column        Non-Null Count  Dtype         
+    ---  ------        --------------  -----         
+     0   refresh_date  10 non-null     datetime64[ns]
+     1   rank          10 non-null     Int64         
+     2   term          10 non-null     object        
+     3   score         10 non-null     Int64         
+     4   percent_gain  10 non-null     Float64       
+     5   country_name  10 non-null     object        
+     6   week          10 non-null     datetime64[ns]
+    dtypes: Float64(1), Int64(2), datetime64[ns](2), object(2)
+    memory usage: 722.0+ bytes
+    None
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&#10;    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+&#10;    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+
+|  | refresh_date | rank | term | score | percent_gain | country_name | week |
+|----|----|----|----|----|----|----|----|
+| 0 | 2025-11-22 | 1 | mani | 100 | 65.0 | United Kingdom | 2025-11-16 |
+| 1 | 2025-11-22 | 2 | mani stone roses | 100 | 43.5 | United Kingdom | 2025-11-16 |
+| 2 | 2025-11-22 | 3 | stone roses | 100 | 43.5 | United Kingdom | 2025-11-16 |
+| 3 | 2025-11-22 | 4 | lavalier | 100 | 41.5 | United Kingdom | 2025-11-16 |
+| 4 | 2025-11-22 | 5 | boutonniere | 100 | 32.5 | United Kingdom | 2025-11-16 |
+| 5 | 2025-11-22 | 6 | eng vs aus | 100 | 30.5 | United Kingdom | 2025-11-16 |
+| 6 | 2025-11-22 | 7 | wolf eel | 100 | 25.0 | United Kingdom | 2025-11-16 |
+| 7 | 2025-11-22 | 8 | england vs australia | 31 | 20.5 | United Kingdom | 2025-11-16 |
+| 8 | 2025-11-22 | 9 | lavalier meaning | 100 | 15.5 | United Kingdom | 2025-11-16 |
+| 9 | 2025-11-22 | 10 | scarf ring | 100 | 10.5 | United Kingdom | 2025-11-16 |
+
+</div>
+
+### Writing a df to BigQuery
+
+The rest [`to`](https://motdam.github.io/bqdf/core.html#to) function is
+unchanged beyond removing the redundant \_gbq suffix. We can write our
+df back into BigQuery using hte
+[`to`](https://motdam.github.io/bqdf/core.html#to) function.
+
+``` python
+# Write the dataframe to a temporary table
+to(df, 'bq-sandbox-motdam.temporary.top_10_eng_search_terms', credentials=credentials, if_exists='replace')
+```
+
+      0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 13273.11it/s]
+
+    Sent 10 rows × 7 cols (0.0000 GB) to bq-sandbox-motdam.temporary.top_10_eng_search_terms in 2.64s
+
+### Executing SQL in BigQuery
+
+The [`ex`](https://motdam.github.io/bqdf/core.html#ex) fucntion enables
+non df based CRUD operations within the same api which can be useful for
+creating feature processing pipelines.
+
+``` python
+project = 'bq-sandbox-motdam'
+
+def create_top_terms(period, days):
+    return f"""
+    CREATE OR REPLACE TABLE `{project}.temporary.top_terms_{period}` AS
+    WITH ranked AS (
+      SELECT region_name, term, COUNT(*) as appearances, AVG(rank) as avg_rank,
+        ROW_NUMBER() OVER (PARTITION BY region_name ORDER BY COUNT(*) DESC, AVG(rank)) as rn
+      FROM `bigquery-public-data.google_trends.international_top_rising_terms`
+      WHERE country_name = 'United Kingdom'
+        AND region_name IN ('England', 'Scotland', 'Wales', 'Northern Ireland')
+        AND refresh_date BETWEEN CURRENT_DATE() - {days} AND CURRENT_DATE()
+        AND rank <= 100
+      GROUP BY region_name, term
+    )
+    SELECT region_name, term as top_term_{period}
+    FROM ranked WHERE rn = 1
+    """
+
+ex(create_top_terms('today', 1), credentials=credentials, project_id=project)
+ex(create_top_terms('week', 8), credentials=credentials, project_id=project)
+ex(create_top_terms('month', 31), credentials=credentials, project_id=project)
+ex(create_top_terms('year', 366), credentials=credentials, project_id=project)
+
+final_query = f"""
+SELECT t.region_name, t.top_term_today, w.top_term_week, m.top_term_month, y.top_term_year
+FROM `{project}.temporary.top_terms_today` as t
+JOIN `{project}.temporary.top_terms_week` as w ON t.region_name = w.region_name
+JOIN `{project}.temporary.top_terms_month` as m ON t.region_name = m.region_name
+JOIN `{project}.temporary.top_terms_year` as y ON t.region_name = y.region_name
+ORDER BY t.region_name
+"""
+
+read(final_query, credentials=credentials, project_id=project)
+```
+
+    Processed 0.3619 GB, 0 rows affected in 2.23s
+    Processed 2.9607 GB, 0 rows affected in 2.56s
+    Processed 11.6322 GB, 0 rows affected in 2.53s
+    Processed 12.1485 GB, 0 rows affected in 2.21s
+    Downloading:   0%|          |Downloading: 100%|██████████|
+    Loaded 4 rows × 5 cols (0.0000 GB) from query in 0.59s
+    <class 'pandas.core.frame.DataFrame'>
+    RangeIndex: 4 entries, 0 to 3
+    Data columns (total 5 columns):
+     #   Column          Non-Null Count  Dtype 
+    ---  ------          --------------  ----- 
+     0   region_name     4 non-null      object
+     1   top_term_today  4 non-null      object
+     2   top_term_week   4 non-null      object
+     3   top_term_month  4 non-null      object
+     4   top_term_year   4 non-null      object
+    dtypes: object(5)
+    memory usage: 292.0+ bytes
+    None
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&#10;    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+&#10;    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+
+|  | region_name | top_term_today | top_term_week | top_term_month | top_term_year |
+|----|----|----|----|----|----|
+| 0 | England | mani | moderate snow ice warning | moderate rainfall warning | ftse 100 |
+| 1 | Northern Ireland | mani | moderate snow ice warning | moderate rainfall warning | ftse 100 |
+| 2 | Scotland | mani | moderate snow ice warning | moderate rainfall warning | ftse 100 |
+| 3 | Wales | mani | moderate snow ice warning | moderate rainfall warning | ftse 100 |
+
+</div>
+
+British search history in a nutshell: ‘Is it raining?’ followed
+immediately by ‘Can I afford to move somewhere sunny?’
+
+## Developer Guide
+
+If you are new to using `nbdev` here are some useful pointers to get you
+started.
+
+### Install bqdf in Development mode
+
+``` sh
+# make sure bqdf package is installed in development mode
+$ pip install -e .
+
+# make changes under nbs/ directory
+# ...
+
+# compile to have changes apply to bqdf
+$ nbdev_prepare
+```
