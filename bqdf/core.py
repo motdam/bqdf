@@ -29,10 +29,6 @@ def read(
         elapsed = time.time() - start
         print(f"Retrieved {len(df)} rows × {len(df.columns)} cols in {elapsed:.2f}s")
         print(df.info())
-        try:
-            from IPython.display import display
-            display(df.head())
-        except ImportError: print(df.head())
     return df
 
 def to(dataframe, destination_table, **kwargs):
