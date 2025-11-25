@@ -5,7 +5,7 @@
 # %% auto 0
 __all__ = ['read', 'convert_bq_dtypes', 'to', 'ex', 'Table', 'exists', 'ensure']
 
-# %% ../nbs/00_core.ipynb 4
+# %% ../nbs/00_core.ipynb 5
 from pandas_gbq import read_gbq as _original_read_gbq, to_gbq as _original_to_gbq, Context, context
 import pandas as pd, re, time
 from decimal import Decimal
@@ -13,13 +13,12 @@ from google.cloud import bigquery
 from dataclasses import dataclass
 from google.cloud import bigquery
 from google.cloud.exceptions import NotFound
-from nbdev.showdoc import *
 from google.oauth2 import service_account
 from google.auth import default
 import os
 import json
 
-# %% ../nbs/00_core.ipynb 6
+# %% ../nbs/00_core.ipynb 7
 def _get_credentials():
     creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
     if creds_json: return service_account.Credentials.from_service_account_info(json.loads(creds_json))
@@ -28,7 +27,7 @@ def _get_credentials():
     return None
 
 
-# %% ../nbs/00_core.ipynb 12
+# %% ../nbs/00_core.ipynb 13
 def read(
     query_or_table:str, # SQL query string or table reference
     verbose:bool=True, # Print timing and DataFrame info
@@ -51,7 +50,7 @@ def read(
         print(df.info())
     return df
 
-# %% ../nbs/00_core.ipynb 14
+# %% ../nbs/00_core.ipynb 15
 def convert_bq_dtypes(
     df:pd.DataFrame, # DataFrame to convert
     date_cols:list=None, # List of columns to convert to datetime
@@ -71,7 +70,7 @@ def convert_bq_dtypes(
             if first_val is not None and isinstance(first_val, Decimal): df[col] = df[col].astype('Float64')
     return df
 
-# %% ../nbs/00_core.ipynb 16
+# %% ../nbs/00_core.ipynb 17
 def to(
     df:pd.DataFrame, # DataFrame to write to BigQuery
     destination_table:str, # Destination table in format 'project.dataset.table' or 'dataset.table'
@@ -89,12 +88,12 @@ def to(
         print(f"Sent {len(df)} rows × {len(df.columns)} cols ({size_gb:.4f} GB) to {destination_table} in {elapsed:.2f}s")
     return result
 
-# %% ../nbs/00_core.ipynb 18
+# %% ../nbs/00_core.ipynb 19
 def _get_size_gb(df):
     return df.memory_usage(deep=True).sum() / 1024**3
 
 
-# %% ../nbs/00_core.ipynb 20
+# %% ../nbs/00_core.ipynb 21
 def ex(
     query:str, # SQL query string
     project_id:str, # Project ID
@@ -116,7 +115,7 @@ def ex(
         print(f"Processed {gb_processed:.4f} GB{cached}, {rows_affected} rows affected in {elapsed:.2f}s")
     return result
 
-# %% ../nbs/00_core.ipynb 22
+# %% ../nbs/00_core.ipynb 23
 @dataclass
 class Table:
     project: str
@@ -137,7 +136,7 @@ class Table:
 
 
 
-# %% ../nbs/00_core.ipynb 24
+# %% ../nbs/00_core.ipynb 25
 def exists(
     table_id:str, # Table reference (project.dataset.table or dataset.table)
     project_id:str, # Default project if not in table_id
@@ -158,7 +157,7 @@ def exists(
         if verbose: print(f"Table {table_id} not found")
         return False
 
-# %% ../nbs/00_core.ipynb 26
+# %% ../nbs/00_core.ipynb 27
 def ensure(
     table_id:str,
     query:str,

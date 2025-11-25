@@ -283,3 +283,641 @@ $ pip install -e .
 # compile to have changes apply to bqdf
 $ nbdev_prepare
 ```
+
+How can i release my package with pypy?
+
+##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
+
+To release your package to PyPI, you’ll need to:
+
+1.  **Set up your PyPI account** (if you haven’t already):
+
+    - Create an account at https://pypi.org
+    - Set up 2FA (required)
+    - Generate an API token at https://pypi.org/manage/account/token/
+
+2.  **Configure your credentials**:
+
+    ``` sh
+    # Create/edit ~/.pypirc
+    [pypi]
+    username = __token__
+    password = pypi-YOUR_TOKEN_HERE
+    ```
+
+3.  **Build and upload** (nbdev makes this easy):
+
+    ``` sh
+    # Build the package
+    nbdev_prepare
+
+    # Build distribution files
+    python -m build
+
+    # Upload to PyPI
+    twine upload dist/*
+    ```
+
+    Or use nbdev’s built-in release command:
+
+    ``` sh
+    nbdev_pypi
+    ```
+
+4.  **For automated releases via GitHub Actions**, add your PyPI token
+    as a GitHub secret named `PYPI_TOKEN`, and nbdev will handle
+    releases when you push a new version tag.
+
+Make sure your `settings.ini` has the correct package metadata (version,
+description, author, etc.) before releasing. Each time you want to
+release a new version, bump the version number in `settings.ini`, run
+`nbdev_prepare`, and then upload.
+
+do they have a cli client i can use locally?
+
+##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
+
+Yes! You can use `twine` to upload from the command line:
+
+``` sh
+pip install twine build
+```
+
+Then to release:
+
+``` sh
+python -m build
+twine upload dist/*
+```
+
+Or if you’re using nbdev (which you are), it has a built-in command:
+
+``` sh
+nbdev_pypi
+```
+
+This will build and upload to PyPI in one step. You’ll need your PyPI
+API token configured in `~/.pypirc` or as an environment variable
+`TWINE_PASSWORD` (with `TWINE_USERNAME=__token__`).
+
+i don’t have an api token right now, whats the quickest rute to getting
+one that is compatible with nbdev?
+
+##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
+
+Here’s the quickest route:
+
+1.  Go to https://pypi.org/manage/account/token/
+2.  Log in (or create account if needed)
+3.  Click “Add API token”
+4.  Give it a name (e.g., “nbdev-release”)
+5.  Set scope to “Entire account” (or specific to your project once it
+    exists)
+6.  Copy the token (starts with `pypi-...`)
+
+Then configure it for nbdev by creating/editing `~/.pypirc`:
+
+    [pypi]
+    username = __token__
+    password = pypi-YOUR_TOKEN_HERE
+
+Or set environment variables:
+
+``` sh
+export TWINE_USERNAME=__token__
+export TWINE_PASSWORD=pypi-YOUR_TOKEN_HERE
+```
+
+Then `nbdev_pypi` will work immediately.
+
+what should i set py pypi token to? in my solviet-env
+
+##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
+
+Set it as an environment variable in your shell:
+
+``` sh
+export TWINE_USERNAME=__token__
+export TWINE_PASSWORD=pypi-YOUR_TOKEN_HERE
+```
+
+Or if you want it to persist across sessions, add those lines to your
+`~/.bashrc` or `~/.zshrc` (depending on your shell).
+
+Alternatively, create `~/.pypirc`:
+
+    [pypi]
+    username = __token__
+    password = pypi-YOUR_TOKEN_HERE
+
+The `~/.pypirc` approach is usually cleaner since it keeps credentials
+in one place and works automatically with `twine` and `nbdev_pypi`.
+
+can i do that in solveit?
+
+##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
+
+Yes! You can set environment variables in solveit using Python:
+
+``` python
+import os
+os.environ['TWINE_USERNAME'] = '__token__'
+os.environ['TWINE_PASSWORD'] = 'pypi-YOUR_TOKEN_HERE'
+```
+
+Or write the `~/.pypirc` file directly:
+
+``` python
+Path.home().joinpath('.pypirc').write_text('[pypi]\nusername = __token__\npassword = pypi-YOUR_TOKEN_HERE\n')
+```
+
+will it persist if i do it like that? i thought solveit had special
+places to uplaod keys?
+
+##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
+
+You’re right - environment variables set with `os.environ` in Python
+won’t persist after the interpreter restarts (when you click “Clear” or
+restart solveit).
+
+For persistent secrets in solveit, the best approach is to create a
+`.env` file in your project directory or use the `~/.pypirc` file
+approach since that writes to your home directory which persists:
+
+``` python
+Path.home().joinpath('.pypirc').write_text('[pypi]\nusername = __token__\npassword = pypi-YOUR_TOKEN_HERE\n')
+```
+
+This file will remain even after restarting solveit. Then `nbdev_pypi`
+and `twine` will automatically find and use it.
+
+what will the env vars be called, how will nbdev access them? please
+search the source code and let me knwo
+
+##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
+
+Based on the search results,
+[\*](https://twine-bhrutledge.readthedocs.io/en/stable/ "Welcome to twine’s documentation! — twine 3.8.0 documentation")
+the environment variables are `TWINE_USERNAME` and `TWINE_PASSWORD`.
+Both `nbdev_pypi` and `twine` will automatically use these environment
+variables for authentication.
+
+Here’s how to set them persistently in solveit:
+
+``` python
+pypirc_content = """[pypi]
+username = __token__
+password = pypi-YOUR_TOKEN_HERE
+"""
+Path.home().joinpath('.pypirc').write_text(pypirc_content)
+```
+
+Or if you prefer environment variables:
+
+``` python
+import os
+os.environ['TWINE_USERNAME'] = '__token__'
+os.environ['TWINE_PASSWORD'] = 'pypi-YOUR_TOKEN_HERE'
+```
+
+The `~/.pypirc` file approach is better since it persists across
+sessions, while the environment variable approach only lasts for the
+current Python session.
+
+Here is that i got when i tried to run it wihtout settin gthe
+environemetn vairbale:
+
+    $ nbdev_pypi
+    * Creating isolated environment: venv+pip...
+    * Installing packages in isolated environment:
+      - setuptools>=64.0
+    * Getting build dependencies for sdist...
+    <string>:1: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+    /tmp/build-env-5dgiw3hi/lib/python3.12/site-packages/setuptools/dist.py:759: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+    !!
+
+            ********************************************************************************
+            Please consider removing the following classifiers in favor of a SPDX license expression:
+
+            License :: OSI Approved :: Apache Software License
+
+            See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+            ********************************************************************************
+
+    !!
+      self._finalize_license_expression()
+    running egg_info
+    writing bqdf.egg-info/PKG-INFO
+    writing dependency_links to bqdf.egg-info/dependency_links.txt
+    writing entry points to bqdf.egg-info/entry_points.txt
+    writing requirements to bqdf.egg-info/requires.txt
+    writing top-level names to bqdf.egg-info/top_level.txt
+    reading manifest file 'bqdf.egg-info/SOURCES.txt'
+    reading manifest template 'MANIFEST.in'
+    warning: no files found matching 'CONTRIBUTING.md'
+    warning: no previously-included files matching '__pycache__' found under directory '*'
+    adding license file 'LICENSE'
+    writing manifest file 'bqdf.egg-info/SOURCES.txt'
+    * Building sdist...
+    <string>:1: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+    /tmp/build-env-5dgiw3hi/lib/python3.12/site-packages/setuptools/dist.py:759: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+    !!
+
+            ********************************************************************************
+            Please consider removing the following classifiers in favor of a SPDX license expression:
+
+            License :: OSI Approved :: Apache Software License
+
+            See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+            ********************************************************************************
+
+    !!
+      self._finalize_license_expression()
+    running sdist
+    running egg_info
+    writing bqdf.egg-info/PKG-INFO
+    writing dependency_links to bqdf.egg-info/dependency_links.txt
+    writing entry points to bqdf.egg-info/entry_points.txt
+    writing requirements to bqdf.egg-info/requires.txt
+    writing top-level names to bqdf.egg-info/top_level.txt
+    reading manifest file 'bqdf.egg-info/SOURCES.txt'
+    reading manifest template 'MANIFEST.in'
+    warning: no files found matching 'CONTRIBUTING.md'
+    warning: no previously-included files matching '__pycache__' found under directory '*'
+    adding license file 'LICENSE'
+    writing manifest file 'bqdf.egg-info/SOURCES.txt'
+    running check
+    creating bqdf-0.0.1
+    creating bqdf-0.0.1/bqdf
+    creating bqdf-0.0.1/bqdf.egg-info
+    copying files to bqdf-0.0.1...
+    copying LICENSE -> bqdf-0.0.1
+    copying MANIFEST.in -> bqdf-0.0.1
+    copying README.md -> bqdf-0.0.1
+    copying pyproject.toml -> bqdf-0.0.1
+    copying settings.ini -> bqdf-0.0.1
+    copying setup.py -> bqdf-0.0.1
+    copying bqdf/__init__.py -> bqdf-0.0.1/bqdf
+    copying bqdf/_modidx.py -> bqdf-0.0.1/bqdf
+    copying bqdf/core.py -> bqdf-0.0.1/bqdf
+    copying bqdf.egg-info/PKG-INFO -> bqdf-0.0.1/bqdf.egg-info
+    copying bqdf.egg-info/SOURCES.txt -> bqdf-0.0.1/bqdf.egg-info
+    copying bqdf.egg-info/dependency_links.txt -> bqdf-0.0.1/bqdf.egg-info
+    copying bqdf.egg-info/entry_points.txt -> bqdf-0.0.1/bqdf.egg-info
+    copying bqdf.egg-info/not-zip-safe -> bqdf-0.0.1/bqdf.egg-info
+    copying bqdf.egg-info/requires.txt -> bqdf-0.0.1/bqdf.egg-info
+    copying bqdf.egg-info/top_level.txt -> bqdf-0.0.1/bqdf.egg-info
+    copying bqdf.egg-info/SOURCES.txt -> bqdf-0.0.1/bqdf.egg-info
+    Writing bqdf-0.0.1/setup.cfg
+    Creating tar archive
+    removing 'bqdf-0.0.1' (and everything under it)
+    * Building wheel from sdist
+    * Creating isolated environment: venv+pip...
+    * Installing packages in isolated environment:
+      - setuptools>=64.0
+    * Getting build dependencies for wheel...
+    <string>:1: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+    /tmp/build-env-8n1xfva8/lib/python3.12/site-packages/setuptools/dist.py:759: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+    !!
+
+            ********************************************************************************
+            Please consider removing the following classifiers in favor of a SPDX license expression:
+
+            License :: OSI Approved :: Apache Software License
+
+            See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+            ********************************************************************************
+
+    !!
+      self._finalize_license_expression()
+    running egg_info
+    writing bqdf.egg-info/PKG-INFO
+    writing dependency_links to bqdf.egg-info/dependency_links.txt
+    writing entry points to bqdf.egg-info/entry_points.txt
+    writing requirements to bqdf.egg-info/requires.txt
+    writing top-level names to bqdf.egg-info/top_level.txt
+    reading manifest file 'bqdf.egg-info/SOURCES.txt'
+    reading manifest template 'MANIFEST.in'
+    warning: no files found matching 'CONTRIBUTING.md'
+    warning: no previously-included files matching '__pycache__' found under directory '*'
+    adding license file 'LICENSE'
+    writing manifest file 'bqdf.egg-info/SOURCES.txt'
+    * Building wheel...
+    <string>:1: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+    /tmp/build-env-8n1xfva8/lib/python3.12/site-packages/setuptools/dist.py:759: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+    !!
+
+            ********************************************************************************
+            Please consider removing the following classifiers in favor of a SPDX license expression:
+
+            License :: OSI Approved :: Apache Software License
+
+            See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+            ********************************************************************************
+
+    !!
+      self._finalize_license_expression()
+    running bdist_wheel
+    running build
+    running build_py
+    creating build/lib/bqdf
+    copying bqdf/core.py -> build/lib/bqdf
+    copying bqdf/__init__.py -> build/lib/bqdf
+    copying bqdf/_modidx.py -> build/lib/bqdf
+    running egg_info
+    writing bqdf.egg-info/PKG-INFO
+    writing dependency_links to bqdf.egg-info/dependency_links.txt
+    writing entry points to bqdf.egg-info/entry_points.txt
+    writing requirements to bqdf.egg-info/requires.txt
+    writing top-level names to bqdf.egg-info/top_level.txt
+    reading manifest file 'bqdf.egg-info/SOURCES.txt'
+    reading manifest template 'MANIFEST.in'
+    warning: no files found matching 'CONTRIBUTING.md'
+    warning: no previously-included files matching '__pycache__' found under directory '*'
+    adding license file 'LICENSE'
+    writing manifest file 'bqdf.egg-info/SOURCES.txt'
+    installing to build/bdist.linux-x86_64/wheel
+    running install
+    running install_lib
+    creating build/bdist.linux-x86_64/wheel
+    creating build/bdist.linux-x86_64/wheel/bqdf
+    copying build/lib/bqdf/core.py -> build/bdist.linux-x86_64/wheel/./bqdf
+    copying build/lib/bqdf/__init__.py -> build/bdist.linux-x86_64/wheel/./bqdf
+    copying build/lib/bqdf/_modidx.py -> build/bdist.linux-x86_64/wheel/./bqdf
+    running install_egg_info
+    Copying bqdf.egg-info to build/bdist.linux-x86_64/wheel/./bqdf-0.0.1-py3.12.egg-info
+    running install_scripts
+    creating build/bdist.linux-x86_64/wheel/bqdf-0.0.1.dist-info/WHEEL
+    creating '/app/data/bqdf/dist/.tmp-6828tfc6/bqdf-0.0.1-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+    adding 'bqdf/__init__.py'
+    adding 'bqdf/_modidx.py'
+    adding 'bqdf/core.py'
+    adding 'bqdf-0.0.1.dist-info/licenses/LICENSE'
+    adding 'bqdf-0.0.1.dist-info/METADATA'
+    adding 'bqdf-0.0.1.dist-info/WHEEL'
+    adding 'bqdf-0.0.1.dist-info/entry_points.txt'
+    adding 'bqdf-0.0.1.dist-info/top_level.txt'
+    adding 'bqdf-0.0.1.dist-info/RECORD'
+    removing build/bdist.linux-x86_64/wheel
+    Successfully built bqdf-0.0.1.tar.gz and bqdf-0.0.1-py3-none-any.whl
+    sh: 1: twine: not found
+
+##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
+
+You need to install `twine` first:
+
+``` python
+!pip install twine
+```
+
+Then you can run `nbdev_pypi` again, but make sure you’ve set up your
+PyPI credentials first using one of these approaches:
+
+``` python
+pypirc_content = """[pypi]
+username = __token__
+password = pypi-YOUR_TOKEN_HERE
+"""
+Path.home().joinpath('.pypirc').write_text(pypirc_content)
+```
+
+okay thats done, what next?
+
+##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
+
+Now set up your PyPI credentials. First, get your API token from
+https://pypi.org/manage/account/token/, then run:
+
+``` python
+pypirc_content = """[pypi]
+username = __token__
+password = pypi-YOUR_ACTUAL_TOKEN_HERE
+"""
+Path.home().joinpath('.pypirc').write_text(pypirc_content)
+```
+
+Replace `pypi-YOUR_ACTUAL_TOKEN_HERE` with your actual token, then you
+can run `nbdev_pypi` to upload your package.
+
+i don’t think thats correct, everything i have seen so far about solveit
+has said the env vars are set through the gui dashbaord. please check
+the process in the docs. search here and look for the answer
+https://www.fast.ai/posts/2025-11-07-solveit-features.html
+
+##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
+
+<details class="tool-usage-details">
+
+``` json
+{
+  "id": "toolu_01YJzEzgHTE3QxjWiQo4T2wf",
+  "call": {
+    "function": "read_url",
+    "arguments": {
+      "url": "https://www.fast.ai/posts/2025-11-07-solveit-features.html"
+    }
+  },
+  "result": "'[ fast.ai ](../index.html)\\n\\n  * [ About](../about.html)\\n  * [ __ ](https://github.com/fastai)\\n <TRUNCATED>"
+}
+```
+
+</details>
+
+You’re right! According to the docs, secrets are managed through the GUI
+dashboard in the Secrets section.
+
+To set your PyPI token:
+
+1.  Go to your dialog list page (click the SolveIt logo at top-left of
+    any dialog)
+2.  Look for the “Secrets” section on the right side
+3.  Add a new secret with:
+    - Name: `TWINE_USERNAME`
+    - Secret: `__token__`
+4.  Add another secret with:
+    - Name: `TWINE_PASSWORD`
+    - Secret: `pypi-YOUR_ACTUAL_TOKEN_HERE`
+
+These become environment variables available in your Python code and
+persist across sessions. Then `nbdev_pypi` will automatically use them.
+
+loks like it worked then did it?
+
+    Successfully built bqdf-0.0.1.tar.gz and bqdf-0.0.1-py3-none-any.whl
+    Uploading distributions to https://upload.pypi.org/legacy/
+    WARNING  This environment is not supported for trusted publishing                                                                      
+    Enter your API token: 
+    Uploading bqdf-0.0.1-py3-none-any.whl
+    100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 26.3/26.3 kB • 00:00 • 59.5 MB/s
+    Uploading bqdf-0.0.1.tar.gz
+    100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 27.8/27.8 kB • 00:00 • 73.1 MB/s
+
+    View at:
+    https://pypi.org/project/bqdf/0.0.1/
+
+##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
+
+Yes! It worked perfectly! Your package `bqdf` version 0.0.1 is now live
+on PyPI at https://pypi.org/project/bqdf/0.0.1/
+
+Anyone can now install it with:
+
+``` sh
+pip install bqdf
+```
+
+Congratulations on your first PyPI release! 🎉
+
+will i also need to install nbdev as a requirement? when i tried to pip
+insatll from pypi i got
+
+    ---------------------------------------------------------------------------
+    ModuleNotFoundError                       Traceback (most recent call last)
+    Cell In[5], line 1
+    ----> 1 import bqdf.core as pbq
+          3 df = pbq.read("petsathome-datawarehouse.datawarehouse.dim_business")
+          4 df
+
+    File ~/scratch/venv/lib/python3.12/site-packages/bqdf/core.py:16
+         14 from google.cloud import bigquery
+         15 from google.cloud.exceptions import NotFound
+    ---> 16 from nbdev.showdoc import *
+         17 from google.oauth2 import service_account
+         18 from google.auth import default
+
+    ModuleNotFoundError: No module named 'nbdev'
+
+##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
+
+Yes, you need to add `nbdev` to your package dependencies. In your
+`settings.ini` file, add it to the `requirements` line:
+
+``` ini
+requirements = pandas pandas-gbq google-cloud-bigquery nbdev
+```
+
+Then run:
+
+``` sh
+nbdev_prepare
+```
+
+And bump your version number in `settings.ini` (e.g., from `0.0.1` to
+`0.0.2`), then release again with `nbdev_pypi`.
+
+However, you probably don’t actually need `nbdev` as a runtime
+dependency - you’re likely only using `from nbdev.showdoc import *` for
+documentation purposes. You could remove that import from your `core.py`
+since it’s not needed for the actual functionality of your library.
+
+so thats a requiermtn for every nbdev module?
+
+##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
+
+No, `nbdev` should only be a *development* dependency, not a runtime
+requirement.
+
+In your `settings.ini`, you should have:
+
+``` ini
+requirements = pandas pandas-gbq google-cloud-bigquery
+dev_requirements = nbdev
+```
+
+This way, people who install your package via `pip install bqdf` won’t
+need nbdev, but developers working on the package will get it when they
+install in development mode.
+
+You should remove `from nbdev.showdoc import *` from your `core.py` file
+since that’s only needed for documentation generation in notebooks, not
+for the actual package functionality.
+
+``` python
+!cat ~/bqdf/settings.ini
+```
+
+    [DEFAULT]
+    # All sections below are required unless otherwise specified.
+    # See https://github.com/AnswerDotAI/nbdev/blob/main/settings.ini for examples.
+
+    ### Python library ###
+    repo = bqdf
+    lib_name = %(repo)s
+    version = 0.0.1
+    min_python = 3.9
+    license = apache2
+    black_formatting = False
+
+    ### nbdev ###
+    doc_path = _docs
+    lib_path = bqdf
+    nbs_path = nbs
+    recursive = True
+    tst_flags = notest
+    put_version_in_init = True
+    update_pyproject = True
+
+    ### Docs ###
+    branch = main
+    custom_sidebar = False
+    doc_host = https://%(user)s.github.io
+    doc_baseurl = /%(repo)s
+    git_url = https://github.com/%(user)s/%(repo)s
+    title = %(lib_name)s
+
+    ### PyPI ###
+    audience = Developers
+    author = motdam
+    author_email = tmad@hotmail.co.uk
+    copyright = 2025 onwards, %(author)s
+    description = Ergonomic wrapper for pandas_gbq that simplifies loading BigQuery data into DataFrames
+    keywords = nbdev jupyter notebook python
+    language = English
+    status = 3
+    user = motdam
+
+    ### Optional ###
+    requirements = fastcore pandas google-cloud-bigquery google-cloud-bigquery-storage pandas-gbq
+    dev_requirements = nbdev
+    # console_scripts =
+    # conda_user = 
+    # package_data =
+
+does that look okay now? is there any other libs we are missing?
+
+##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
+
+That looks good! Your `settings.ini` has the right structure with
+`nbdev` in `dev_requirements` instead of `requirements`.
+
+However, you should remove the `from nbdev.showdoc import *` line from
+your `bqdf/core.py` file since nbdev is no longer a runtime requirement.
+That import is only needed in notebooks for documentation, not in the
+actual library code.
+
+After removing that import, bump your version to `0.0.2` in
+`settings.ini`, run `nbdev_prepare`, and then `nbdev_pypi` to release
+the fixed version.
+
+why was it there before?
+
+##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
+
+It was there because nbdev notebooks often include
+`from nbdev.showdoc import *` to display nice documentation for
+functions while you’re developing in the notebook. When nbdev exports
+the notebook to Python modules, it normally includes all imports from
+the notebook cells.
+
+The `showdoc` functions (like `show_doc()`) are useful for rendering
+function documentation in notebook outputs, but they’re not needed for
+the actual library functionality - they’re just
+development/documentation tools.
+
+You can either: 1. Remove that import from your notebook and re-export
+with `nbdev_prepare` 2. Or add `#|export` directives more carefully to
+exclude that import from the exported code
+
+The cleanest approach is to keep `from nbdev.showdoc import *` in a
+separate notebook cell without the `#|export` directive, so it’s
+available while you’re working but doesn’t get exported to the module.
