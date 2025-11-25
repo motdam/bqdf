@@ -921,3 +921,5 @@ exclude that import from the exported code
 The cleanest approach is to keep `from nbdev.showdoc import *` in a
 separate notebook cell without the `#|export` directive, so it’s
 available while you’re working but doesn’t get exported to the module.
+
+how can i update my pypi package now that i’ve made those chanegs?
