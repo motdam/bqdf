@@ -42,6 +42,11 @@ of the pandas-gbq library to perform CRUD operations in BigQuery more
 quickly
 
 ``` python
+import pandas_gbq
+import pandas as pd
+```
+
+``` python
 top_terms_query = """
 -- todays top 10 search terms in England
 SELECT refresh_date, rank, term, score, percent_gain / 100 as percent_gain, country_name, week
@@ -61,14 +66,52 @@ df = read(top_terms_query, project_id='bq-sandbox-motdam')
 df.head()
 ```
 
+    Downloading:   0%|          |Downloading: 100%|██████████|
+    Loaded 5 rows × 7 cols (0.0000 GB) from query in 1.31s
+    <class 'pandas.core.frame.DataFrame'>
+    RangeIndex: 5 entries, 0 to 4
+    Data columns (total 7 columns):
+     #   Column        Non-Null Count  Dtype         
+    ---  ------        --------------  -----         
+     0   refresh_date  5 non-null      datetime64[ns]
+     1   rank          5 non-null      Int64         
+     2   term          5 non-null      object        
+     3   score         5 non-null      Int64         
+     4   percent_gain  5 non-null      Float64       
+     5   country_name  5 non-null      object        
+     6   week          5 non-null      dbdate        
+    dtypes: Float64(1), Int64(2), datetime64[ns](1), dbdate(1), object(2)
+    memory usage: 427.0+ bytes
+    None
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&#10;    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+&#10;    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+
+|  | refresh_date | rank | term | score | percent_gain | country_name | week |
+|----|----|----|----|----|----|----|----|
+| 0 | 2025-11-24 | 1 | liverpool vs nottm forest | 15 | 86.0 | United Kingdom | 2025-11-23 |
+| 1 | 2025-11-24 | 2 | leeds united vs aston villa | 100 | 63.5 | United Kingdom | 2025-11-23 |
+| 2 | 2025-11-24 | 3 | arsenal vs tottenham | 100 | 62.0 | United Kingdom | 2025-11-23 |
+| 3 | 2025-11-24 | 4 | newcastle vs man city | 26 | 51.0 | United Kingdom | 2025-11-23 |
+| 4 | 2025-11-24 | 5 | chayote | 9 | 35.0 | United Kingdom | 2025-11-23 |
+
+</div>
+
 To recreate the above with the original library you would need the below
 boiler plate to inspect the results and convert columns into pandas
 friendly dtypes.
 
 ``` python
-import pandas_gbq
-import pandas as pd
-
 df = pandas_gbq.read_gbq(top_terms_query, project_id='bq-sandbox-motdam')
 df = df.astype({
     'percent_gain':'Float64'
@@ -78,6 +121,46 @@ df['refresh_date'] = pd.to_datetime(df['refresh_date'])
 print(df.info())
 df.head()
 ```
+
+    Downloading:   0%|          |Downloading: 100%|██████████|
+    <class 'pandas.core.frame.DataFrame'>
+    RangeIndex: 5 entries, 0 to 4
+    Data columns (total 7 columns):
+     #   Column        Non-Null Count  Dtype         
+    ---  ------        --------------  -----         
+     0   refresh_date  5 non-null      datetime64[ns]
+     1   rank          5 non-null      Int64         
+     2   term          5 non-null      object        
+     3   score         5 non-null      Int64         
+     4   percent_gain  5 non-null      Float64       
+     5   country_name  5 non-null      object        
+     6   week          5 non-null      datetime64[ns]
+    dtypes: Float64(1), Int64(2), datetime64[ns](2), object(2)
+    memory usage: 427.0+ bytes
+    None
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&#10;    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+&#10;    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+
+|  | refresh_date | rank | term | score | percent_gain | country_name | week |
+|----|----|----|----|----|----|----|----|
+| 0 | 2025-11-24 | 1 | liverpool vs nottm forest | 15 | 86.0 | United Kingdom | 2025-11-23 |
+| 1 | 2025-11-24 | 2 | leeds united vs aston villa | 100 | 63.5 | United Kingdom | 2025-11-23 |
+| 2 | 2025-11-24 | 3 | arsenal vs tottenham | 100 | 62.0 | United Kingdom | 2025-11-23 |
+| 3 | 2025-11-24 | 4 | newcastle vs man city | 26 | 51.0 | United Kingdom | 2025-11-23 |
+| 4 | 2025-11-24 | 5 | chayote | 9 | 35.0 | United Kingdom | 2025-11-23 |
+
+</div>
 
 ### Writing a df to BigQuery
 
@@ -90,6 +173,10 @@ df back into BigQuery using hte
 # Write the dataframe to a temporary table
 to(df, 'bq-sandbox-motdam.temporary.top_10_eng_search_terms', if_exists='replace')
 ```
+
+      0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 9198.04it/s]
+
+    Sent 5 rows × 7 cols (0.0000 GB) to bq-sandbox-motdam.temporary.top_10_eng_search_terms in 3.53s
 
 ### Executing SQL in BigQuery
 
@@ -133,6 +220,48 @@ ORDER BY t.region_name
 
 read(final_query, project_id=project)
 ```
+
+    Processed 0.3883 GB, 0 rows affected in 2.21s
+    Processed 2.9971 GB, 0 rows affected in 2.35s
+    Processed 11.6400 GB, 0 rows affected in 2.17s
+    Processed 12.1727 GB, 0 rows affected in 2.54s
+    Downloading:   0%|          |Downloading: 100%|██████████|
+    Loaded 4 rows × 5 cols (0.0000 GB) from query in 0.63s
+    <class 'pandas.core.frame.DataFrame'>
+    RangeIndex: 4 entries, 0 to 3
+    Data columns (total 5 columns):
+     #   Column          Non-Null Count  Dtype 
+    ---  ------          --------------  ----- 
+     0   region_name     4 non-null      object
+     1   top_term_today  4 non-null      object
+     2   top_term_week   4 non-null      object
+     3   top_term_month  4 non-null      object
+     4   top_term_year   4 non-null      object
+    dtypes: object(5)
+    memory usage: 292.0+ bytes
+    None
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&#10;    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+&#10;    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+
+|  | region_name | top_term_today | top_term_week | top_term_month | top_term_year |
+|----|----|----|----|----|----|
+| 0 | England | liverpool vs nottm forest | rugby today | ftse 100 | india vs australia |
+| 1 | Northern Ireland | liverpool vs nottm forest | rugby today | ftse 100 | india vs australia |
+| 2 | Scotland | liverpool vs nottm forest | rugby today | ftse 100 | india vs australia |
+| 3 | Wales | liverpool vs nottm forest | rugby today | ftse 100 | india vs australia |
+
+</div>
 
 British search history in a nutshell: ‘Is it raining?’ followed
 immediately by ‘Can I afford to move somewhere sunny?’
