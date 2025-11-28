@@ -20,7 +20,7 @@ import json
 
 # %% ../nbs/00_core.ipynb 7
 def get_creds():
-    "Get credentials and project_id from environment"
+    "Get credentials and project_id from environment variable or ADC"
     creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
     if creds_json:
         creds = service_account.Credentials.from_service_account_info(json.loads(creds_json))
@@ -30,36 +30,41 @@ def get_creds():
     if not proj: raise ValueError("Could not determine project_id. Set GCP_PROJECT or GOOGLE_CLOUD_PROJECT env var.")
     return creds, proj
 
-def _creds_proj(credentials=None, project_id=None):
+def _creds_proj(
+    credentials=None,  # Google credentials object, or None to use defaults
+    project_id=None    # GCP project ID, or None to auto-detect
+):
     "Resolve credentials and project_id, using defaults if not provided"
     if credentials and project_id: return credentials, project_id
     creds, proj = get_creds()
     return credentials or creds, project_id or proj
 
+
 # %% ../nbs/00_core.ipynb 9
 def read(
-    query_or_table:str,
-    verbose:bool=True,
-    convert_dtypes:bool=True,
-    date_cols:list=None,
-    str_cols:list=["scv_id"],
-    use_bqstorage_api:bool=True,
-    credentials=None,
-    project_id=None,
+    query_or_table:str, # BigQuery SQL query or table reference
+    verbose:bool=True, # Print timing and size info
+    convert_dtypes:bool=True, # Convert to pandas nullable types
+    date_cols:list=None, # Additional columns to convert to datetime
+    str_cols:list=["scv_id"], # Columns to keep as string/object type
+    use_bqstorage_api:bool=True, # Use Storage API for faster downloads
+    credentials=None, # Google credentials (defaults to ADC)
+    project_id=None, # GCP project ID (defaults to credential's project)
     **kwargs
-    ):
+):
     "Load data from BigQuery query or table into DataFrame"
     start = time.time()
     creds, proj = _creds_proj(credentials, project_id)
-    df = _original_read_gbq(query_or_table, project_id=proj, use_bqstorage_api=use_bqstorage_api, credentials=creds, **kwargs)
+    is_table = re.match(r"""^[`\w\-]+\.[\w\-]+\.[\w\-\`]+$""", query_or_table)
+    query = f"SELECT * FROM `{query_or_table.replace('`','')}`" if is_table else query_or_table
+    df = _original_read_gbq(query, project_id=proj, use_bqstorage_api=use_bqstorage_api, credentials=creds, **kwargs)
     if convert_dtypes: df = convert_bq_dtypes(df, date_cols=date_cols, str_cols=str_cols)
-    read_type = 'table' if re.match(r"""^[`\w\-]+\.[\w\-]+.[\w\-\`]+$""", query_or_table) else 'query'
     if verbose:
         elapsed = time.time() - start
         size_gb = _get_size_gb(df)
-        print(f"Loaded {len(df)} rows × {len(df.columns)} cols ({size_gb:.4f} GB) from {read_type} in {elapsed:.2f}s")
-        print(df.info())
+        print(f"Loaded {len(df)} rows × {len(df.columns)} cols ({size_gb:.4f} GB) from {'table' if is_table else 'query'} in {elapsed:.2f}s")
     return df
+
 
 # %% ../nbs/00_core.ipynb 11
 def convert_bq_dtypes(
