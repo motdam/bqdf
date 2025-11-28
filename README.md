@@ -67,7 +67,7 @@ df.head()
 ```
 
     Downloading:   0%|          |Downloading: 100%|██████████|
-    Loaded 5 rows × 7 cols (0.0000 GB) from query in 1.31s
+    Loaded 5 rows × 7 cols (0.0000 GB) from query in 0.92s
     <class 'pandas.core.frame.DataFrame'>
     RangeIndex: 5 entries, 0 to 4
     Data columns (total 7 columns):
@@ -99,11 +99,11 @@ df.head()
 
 |  | refresh_date | rank | term | score | percent_gain | country_name | week |
 |----|----|----|----|----|----|----|----|
-| 0 | 2025-11-24 | 1 | liverpool vs nottm forest | 15 | 86.0 | United Kingdom | 2025-11-23 |
-| 1 | 2025-11-24 | 2 | leeds united vs aston villa | 100 | 63.5 | United Kingdom | 2025-11-23 |
-| 2 | 2025-11-24 | 3 | arsenal vs tottenham | 100 | 62.0 | United Kingdom | 2025-11-23 |
-| 3 | 2025-11-24 | 4 | newcastle vs man city | 26 | 51.0 | United Kingdom | 2025-11-23 |
-| 4 | 2025-11-24 | 5 | chayote | 9 | 35.0 | United Kingdom | 2025-11-23 |
+| 0 | 2025-11-27 | 1 | liverpool vs psv | 100 | 63.5 | United Kingdom | 2025-11-23 |
+| 1 | 2025-11-27 | 2 | psg vs tottenham | 70 | 32.5 | United Kingdom | 2025-11-23 |
+| 2 | 2025-11-27 | 3 | richard branson | 100 | 32.0 | United Kingdom | 2025-11-23 |
+| 3 | 2025-11-27 | 4 | arsenal vs bayern | 100 | 31.5 | United Kingdom | 2025-11-23 |
+| 4 | 2025-11-27 | 5 | rinky dink | 100 | 30.5 | United Kingdom | 2025-11-23 |
 
 </div>
 
@@ -154,11 +154,11 @@ df.head()
 
 |  | refresh_date | rank | term | score | percent_gain | country_name | week |
 |----|----|----|----|----|----|----|----|
-| 0 | 2025-11-24 | 1 | liverpool vs nottm forest | 15 | 86.0 | United Kingdom | 2025-11-23 |
-| 1 | 2025-11-24 | 2 | leeds united vs aston villa | 100 | 63.5 | United Kingdom | 2025-11-23 |
-| 2 | 2025-11-24 | 3 | arsenal vs tottenham | 100 | 62.0 | United Kingdom | 2025-11-23 |
-| 3 | 2025-11-24 | 4 | newcastle vs man city | 26 | 51.0 | United Kingdom | 2025-11-23 |
-| 4 | 2025-11-24 | 5 | chayote | 9 | 35.0 | United Kingdom | 2025-11-23 |
+| 0 | 2025-11-27 | 1 | liverpool vs psv | 100 | 63.5 | United Kingdom | 2025-11-23 |
+| 1 | 2025-11-27 | 2 | psg vs tottenham | 70 | 32.5 | United Kingdom | 2025-11-23 |
+| 2 | 2025-11-27 | 3 | richard branson | 100 | 32.0 | United Kingdom | 2025-11-23 |
+| 3 | 2025-11-27 | 4 | arsenal vs bayern | 100 | 31.5 | United Kingdom | 2025-11-23 |
+| 4 | 2025-11-27 | 5 | rinky dink | 100 | 30.5 | United Kingdom | 2025-11-23 |
 
 </div>
 
@@ -174,9 +174,9 @@ df back into BigQuery using hte
 to(df, 'bq-sandbox-motdam.temporary.top_10_eng_search_terms', if_exists='replace')
 ```
 
-      0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 9198.04it/s]
+      0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 5915.80it/s]
 
-    Sent 5 rows × 7 cols (0.0000 GB) to bq-sandbox-motdam.temporary.top_10_eng_search_terms in 3.53s
+    Sent 5 rows × 7 cols (0.0000 GB) to bq-sandbox-motdam.temporary.top_10_eng_search_terms in 5.44s
 
 ### Executing SQL in BigQuery
 
@@ -221,12 +221,12 @@ ORDER BY t.region_name
 read(final_query, project_id=project)
 ```
 
-    Processed 0.3883 GB, 0 rows affected in 2.21s
-    Processed 2.9971 GB, 0 rows affected in 2.35s
-    Processed 11.6400 GB, 0 rows affected in 2.17s
-    Processed 12.1727 GB, 0 rows affected in 2.54s
+    Processed 0.3874 GB, 0 rows affected in 2.80s
+    Processed 3.0023 GB, 0 rows affected in 2.60s
+    Processed 11.6263 GB, 0 rows affected in 2.23s
+    Processed 12.1607 GB, 0 rows affected in 2.29s
     Downloading:   0%|          |Downloading: 100%|██████████|
-    Loaded 4 rows × 5 cols (0.0000 GB) from query in 0.63s
+    Loaded 4 rows × 5 cols (0.0000 GB) from query in 0.95s
     <class 'pandas.core.frame.DataFrame'>
     RangeIndex: 4 entries, 0 to 3
     Data columns (total 5 columns):
@@ -256,10 +256,10 @@ read(final_query, project_id=project)
 
 |  | region_name | top_term_today | top_term_week | top_term_month | top_term_year |
 |----|----|----|----|----|----|
-| 0 | England | liverpool vs nottm forest | rugby today | ftse 100 | india vs australia |
-| 1 | Northern Ireland | liverpool vs nottm forest | rugby today | ftse 100 | india vs australia |
-| 2 | Scotland | liverpool vs nottm forest | rugby today | ftse 100 | india vs australia |
-| 3 | Wales | liverpool vs nottm forest | rugby today | ftse 100 | india vs australia |
+| 0 | England | liverpool vs psv | man united vs everton | ftse 100 | ftse 100 |
+| 1 | Northern Ireland | liverpool vs psv | man united vs everton | ftse 100 | ftse 100 |
+| 2 | Scotland | liverpool vs psv | man united vs everton | ftse 100 | ftse 100 |
+| 3 | Wales | liverpool vs psv | man united vs everton | ftse 100 | ftse 100 |
 
 </div>
 

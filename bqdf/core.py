@@ -22,12 +22,10 @@ import json
 def _get_credentials():
     creds_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
     if creds_json: return service_account.Credentials.from_service_account_info(json.loads(creds_json))
-    creds_file = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-    if creds_file: return service_account.Credentials.from_service_account_file(creds_file)
-    return None
+    creds, _ = default()
+    return creds
 
-
-# %% ../nbs/00_core.ipynb 13
+# %% ../nbs/00_core.ipynb 9
 def read(
     query_or_table:str, # SQL query string or table reference
     verbose:bool=True, # Print timing and DataFrame info
@@ -50,7 +48,7 @@ def read(
         print(df.info())
     return df
 
-# %% ../nbs/00_core.ipynb 15
+# %% ../nbs/00_core.ipynb 11
 def convert_bq_dtypes(
     df:pd.DataFrame, # DataFrame to convert
     date_cols:list=None, # List of columns to convert to datetime
@@ -70,7 +68,7 @@ def convert_bq_dtypes(
             if first_val is not None and isinstance(first_val, Decimal): df[col] = df[col].astype('Float64')
     return df
 
-# %% ../nbs/00_core.ipynb 17
+# %% ../nbs/00_core.ipynb 13
 def to(
     df:pd.DataFrame, # DataFrame to write to BigQuery
     destination_table:str, # Destination table in format 'project.dataset.table' or 'dataset.table'
@@ -88,20 +86,16 @@ def to(
         print(f"Sent {len(df)} rows × {len(df.columns)} cols ({size_gb:.4f} GB) to {destination_table} in {elapsed:.2f}s")
     return result
 
-# %% ../nbs/00_core.ipynb 19
+# %% ../nbs/00_core.ipynb 15
 def _get_size_gb(df):
     return df.memory_usage(deep=True).sum() / 1024**3
 
 
-# %% ../nbs/00_core.ipynb 21
-def ex(
-    query:str, # SQL query string
-    project_id:str, # Project ID
-    verbose:bool=True, # Print timing and processing info
-    credentials=None, # Optional explicit credentials
-    **kwargs
-    ):
+# %% ../nbs/00_core.ipynb 17
+def ex(query:str, project_id:str=None, verbose:bool=True, credentials=None, **kwargs):
     "Execute query in BigQuery without returning results"
+    project_id = project_id or os.getenv('GCP_PROJECT')
+    if not project_id: raise ValueError("Set GCP_PROJECT env var or pass project_id")
     creds = credentials or _get_credentials()
     client = bigquery.Client(project=project_id, credentials=creds, **kwargs)
     start = time.time()
@@ -115,7 +109,7 @@ def ex(
         print(f"Processed {gb_processed:.4f} GB{cached}, {rows_affected} rows affected in {elapsed:.2f}s")
     return result
 
-# %% ../nbs/00_core.ipynb 23
+# %% ../nbs/00_core.ipynb 19
 @dataclass
 class Table:
     project: str
@@ -136,15 +130,11 @@ class Table:
 
 
 
-# %% ../nbs/00_core.ipynb 25
-def exists(
-    table_id:str, # Table reference (project.dataset.table or dataset.table)
-    project_id:str, # Default project if not in table_id
-    credentials=None, # Optional explicit credentials
-    verbose:bool=False, # Print existence status
-    **kwargs
-):
+# %% ../nbs/00_core.ipynb 21
+def exists(table_id:str, project_id:str=None, credentials=None, verbose:bool=False, **kwargs):
     "Check if a BigQuery table exists"
+    project_id = project_id or os.getenv('GCP_PROJECT')
+    if not project_id: raise ValueError("Set GCP_PROJECT env var or pass project_id")
     if isinstance(table_id, Table): table_id = table_id.id
     elif table_id.count('.') == 1: table_id = f"{project_id}.{table_id}"
     creds = credentials or _get_credentials()
@@ -157,17 +147,11 @@ def exists(
         if verbose: print(f"Table {table_id} not found")
         return False
 
-# %% ../nbs/00_core.ipynb 27
-def ensure(
-    table_id:str,
-    query:str,
-    project_id:str,
-    force:bool=False,
-    verbose:bool=True,
-    credentials=None,
-    **kwargs
-):
+# %% ../nbs/00_core.ipynb 23
+def ensure(table_id:str, query:str, project_id:str=None, force:bool=False, verbose:bool=True, credentials=None, **kwargs):
     "Read table if exists, otherwise create from query then read"
+    project_id = project_id or os.getenv('GCP_PROJECT')
+    if not project_id: raise ValueError("Set GCP_PROJECT env var or pass project_id")
     creds = credentials or _get_credentials()
     if not exists(table_id, project_id=project_id, credentials=creds, verbose=verbose) or force:
         create_query = f"CREATE OR REPLACE TABLE {table_id} AS {query}"
