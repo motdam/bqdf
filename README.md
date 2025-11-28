@@ -67,7 +67,7 @@ df.head()
 ```
 
     Downloading:   0%|          |Downloading: 100%|██████████|
-    Loaded 5 rows × 7 cols (0.0000 GB) from query in 0.92s
+    Loaded 5 rows × 7 cols (0.0000 GB) from query in 0.72s
     <class 'pandas.core.frame.DataFrame'>
     RangeIndex: 5 entries, 0 to 4
     Data columns (total 7 columns):
@@ -174,9 +174,9 @@ df back into BigQuery using hte
 to(df, 'bq-sandbox-motdam.temporary.top_10_eng_search_terms', if_exists='replace')
 ```
 
-      0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 5915.80it/s]
+      0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 5899.16it/s]
 
-    Sent 5 rows × 7 cols (0.0000 GB) to bq-sandbox-motdam.temporary.top_10_eng_search_terms in 5.44s
+    Sent 5 rows × 7 cols (0.0000 GB) to bq-sandbox-motdam.temporary.top_10_eng_search_terms in 2.86s
 
 ### Executing SQL in BigQuery
 
@@ -221,12 +221,12 @@ ORDER BY t.region_name
 read(final_query, project_id=project)
 ```
 
-    Processed 0.3874 GB, 0 rows affected in 2.80s
-    Processed 3.0023 GB, 0 rows affected in 2.60s
-    Processed 11.6263 GB, 0 rows affected in 2.23s
-    Processed 12.1607 GB, 0 rows affected in 2.29s
+    Processed 0.3874 GB, 0 rows affected in 2.13s
+    Processed 3.0023 GB, 0 rows affected in 2.21s
+    Processed 11.6263 GB, 0 rows affected in 2.48s
+    Processed 12.1607 GB, 0 rows affected in 2.22s
     Downloading:   0%|          |Downloading: 100%|██████████|
-    Loaded 4 rows × 5 cols (0.0000 GB) from query in 0.95s
+    Loaded 4 rows × 5 cols (0.0000 GB) from query in 0.74s
     <class 'pandas.core.frame.DataFrame'>
     RangeIndex: 4 entries, 0 to 3
     Data columns (total 5 columns):
@@ -262,9 +262,6 @@ read(final_query, project_id=project)
 | 3 | Wales | liverpool vs psv | man united vs everton | ftse 100 | ftse 100 |
 
 </div>
-
-British search history in a nutshell: ‘Is it raining?’ followed
-immediately by ‘Can I afford to move somewhere sunny?’
 
 ## Developer Guide
 
