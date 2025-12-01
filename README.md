@@ -66,6 +66,32 @@ df = read(top_terms_query, project_id='bq-sandbox-motdam')
 df.head()
 ```
 
+    Downloading:   0%|          |Downloading: 100%|██████████|
+    Loaded 5 rows × 7 cols (0.0000 GB) from query in 0.91s
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&#10;    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+&#10;    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+
+|  | refresh_date | rank | term | score | percent_gain | country_name | week |
+|----|----|----|----|----|----|----|----|
+| 0 | 2025-11-30 | 1 | man city vs leeds united | 100 | 63.5 | United Kingdom | 2025-11-23 |
+| 1 | 2025-11-30 | 2 | everton vs newcastle | 100 | 49.5 | United Kingdom | 2025-11-23 |
+| 2 | 2025-11-30 | 3 | moderate rainfall warning | 60 | 48.5 | United Kingdom | 2025-11-23 |
+| 3 | 2025-11-30 | 4 | tottenham vs fulham | 100 | 44.5 | United Kingdom | 2025-11-23 |
+| 4 | 2025-11-30 | 5 | tom stoppard | 100 | 26.5 | United Kingdom | 2025-11-23 |
+
+</div>
+
 To recreate the above with the original library you would need the below
 boiler plate to inspect the results and convert columns into pandas
 friendly dtypes.
@@ -81,6 +107,46 @@ print(df.info())
 df.head()
 ```
 
+    Downloading:   0%|          |Downloading: 100%|██████████|
+    <class 'pandas.core.frame.DataFrame'>
+    RangeIndex: 5 entries, 0 to 4
+    Data columns (total 7 columns):
+     #   Column        Non-Null Count  Dtype         
+    ---  ------        --------------  -----         
+     0   refresh_date  5 non-null      datetime64[ns]
+     1   rank          5 non-null      Int64         
+     2   term          5 non-null      object        
+     3   score         5 non-null      Int64         
+     4   percent_gain  5 non-null      Float64       
+     5   country_name  5 non-null      object        
+     6   week          5 non-null      datetime64[ns]
+    dtypes: Float64(1), Int64(2), datetime64[ns](2), object(2)
+    memory usage: 427.0+ bytes
+    None
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&#10;    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+&#10;    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+
+|  | refresh_date | rank | term | score | percent_gain | country_name | week |
+|----|----|----|----|----|----|----|----|
+| 0 | 2025-11-30 | 1 | man city vs leeds united | 100 | 63.5 | United Kingdom | 2025-11-23 |
+| 1 | 2025-11-30 | 2 | everton vs newcastle | 100 | 49.5 | United Kingdom | 2025-11-23 |
+| 2 | 2025-11-30 | 3 | moderate rainfall warning | 60 | 48.5 | United Kingdom | 2025-11-23 |
+| 3 | 2025-11-30 | 4 | tottenham vs fulham | 100 | 44.5 | United Kingdom | 2025-11-23 |
+| 4 | 2025-11-30 | 5 | tom stoppard | 100 | 26.5 | United Kingdom | 2025-11-23 |
+
+</div>
+
 ### Writing a df to BigQuery
 
 The rest [`to`](https://motdam.github.io/bqdf/core.html#to) function is
@@ -93,6 +159,10 @@ df back into BigQuery using hte
 to(df, 'bq-sandbox-motdam.temporary.top_10_eng_search_terms', if_exists='replace')
 ```
 
+      0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00, 6721.64it/s]
+
+    Sent 5 rows × 7 cols (0.0000 GB) to bq-sandbox-motdam.temporary.top_10_eng_search_terms in 4.83s
+
 ### Executing SQL in BigQuery
 
 The [`ex`](https://motdam.github.io/bqdf/core.html#ex) fucntion enables
@@ -100,11 +170,45 @@ non df based CRUD operations within the same api which can be useful for
 creating feature processing pipelines.
 
 ``` python
-project = 'bq-sandbox-motdam'
+table_id = """bq-sandbox-motdam.temporary.top_terms_today"""
+if exists(table_id):
+    ex(f"drop table {table_id};")
 
+ex(f"""
+CREATE OR REPLACE TABLE {table_id} AS
+SELECT region_name, term, COUNT(*) as appearances
+FROM `bigquery-public-data.google_trends.international_top_rising_terms`
+WHERE country_name = 'United Kingdom'
+  AND refresh_date = CURRENT_DATE() - 1
+GROUP BY region_name, term
+""", project_id="bq-sandbox-motdam")
+exists(table_id)
+;
+```
+
+    Table bq-sandbox-motdam.temporary.top_terms_today exists
+    Executed 1 queries, 1 drops: Processed 0.0000 GB, 0 rows affected in 0.73s
+    Executed 1 creates: Processed 0.3265 GB, 0 rows affected in 2.26s
+    Table bq-sandbox-motdam.temporary.top_terms_today exists
+
+    ''
+
+You can then check whether your operations worked with
+[`exists`](https://motdam.github.io/bqdf/core.html#exists).
+
+### Building and reading tables
+
+The [`build_read`](https://motdam.github.io/bqdf/core.html#build_read)
+function combines table creation and reading in one step. It checks if a
+table exists, executes a query to create it if needed (or if
+`force=True`), then reads and returns the result as a DataFrame. This is
+particularly useful for creating complex multi-step pipelines where you
+want to materialize intermediate tables and read the final result.
+
+``` python
 def create_top_terms(period, days):
     return f"""
-    CREATE OR REPLACE TABLE `{project}.temporary.top_terms_{period}` AS
+    CREATE OR REPLACE TABLE `bq-sandbox-motdam.temporary.top_terms_{period}` AS
     WITH ranked AS (
       SELECT region_name, term, COUNT(*) as appearances, AVG(rank) as avg_rank,
         ROW_NUMBER() OVER (PARTITION BY region_name ORDER BY COUNT(*) DESC, AVG(rank)) as rn
@@ -116,25 +220,58 @@ def create_top_terms(period, days):
       GROUP BY region_name, term
     )
     SELECT region_name, term as top_term_{period}
-    FROM ranked WHERE rn = 1
+    FROM ranked WHERE rn = 1;
     """
 
-ex(create_top_terms('today', 1), project_id=project)
-ex(create_top_terms('week', 8), project_id=project)
-ex(create_top_terms('month', 31), project_id=project)
-ex(create_top_terms('year', 366), project_id=project)
-
-final_query = f"""
+periods = [('today', 1), ('week', 8), ('month', 31), ('year', 366)]
+query_pipeline = ''.join([create_top_terms(period, days) for period, days in periods])
+final_table = 'bq-sandbox-motdam.temporary.top_terms_summary'
+query_pipeline += f"""
+CREATE OR REPLACE TABLE `{final_table}` AS
 SELECT t.region_name, t.top_term_today, w.top_term_week, m.top_term_month, y.top_term_year
-FROM `{project}.temporary.top_terms_today` as t
-JOIN `{project}.temporary.top_terms_week` as w ON t.region_name = w.region_name
-JOIN `{project}.temporary.top_terms_month` as m ON t.region_name = m.region_name
-JOIN `{project}.temporary.top_terms_year` as y ON t.region_name = y.region_name
-ORDER BY t.region_name
+FROM `bq-sandbox-motdam.temporary.top_terms_today` as t
+JOIN `bq-sandbox-motdam.temporary.top_terms_week` as w ON t.region_name = w.region_name
+JOIN `bq-sandbox-motdam.temporary.top_terms_month` as m ON t.region_name = m.region_name
+JOIN `bq-sandbox-motdam.temporary.top_terms_year` as y ON t.region_name = y.region_name
+ORDER BY t.region_name;
 """
+if exists(final_table):
+    drop(final_table)
 
-read(final_query, project_id=project)
+build_read(final_table, query_pipeline, project_id="bq-sandbox-motdam", force=True)
 ```
+
+    Table bq-sandbox-motdam.temporary.top_terms_summary exists
+    Executed 1 drops: Processed 0.0000 GB, 0 rows affected in 0.74s
+    Table bq-sandbox-motdam.temporary.top_terms_summary not found
+    Executed 5 queries, 5 creates: Processed 27.1335 GB, 0 rows affected in 14.30s
+    Downloading:   0%|          |Downloading: 100%|██████████|
+    Loaded 4 rows × 5 cols (0.0000 GB) from table in 0.61s
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&#10;    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+&#10;    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+
+|  | region_name | top_term_today | top_term_week | top_term_month | top_term_year |
+|----|----|----|----|----|----|
+| 0 | England | man city vs leeds united | man united vs everton | moderate rainfall warning | moderate rainfall warning |
+| 1 | Northern Ireland | man city vs leeds united | man united vs everton | moderate rainfall warning | moderate rainfall warning |
+| 2 | Scotland | man city vs leeds united | liverpool vs psv | moderate rainfall warning | moderate rainfall warning |
+| 3 | Wales | man city vs leeds united | man united vs everton | moderate rainfall warning | moderate rainfall warning |
+
+</div>
+
+[`drop`](https://motdam.github.io/bqdf/core.html#drop) can also be used
+as a shorthand to for dropping a single table.
 
 ## Developer Guide
 
